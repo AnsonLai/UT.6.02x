@@ -1,0 +1,67 @@
+// SubFile3.c
+// Runs on LM4F120 or TM4C123, 
+// edX lab 13
+// Daniel Valvano
+// December 29, 2014
+
+// Port E bits 1-0 have 2 keys
+
+#include "..//tm4c123gh6pm.h"
+
+typedef int bool;
+enum { false, true };
+bool PE0Switch;    // switch status (0 = not pressed, 1 = pressed)
+bool PE1Switch;    // switch status (0 = not pressed, 1 = pressed)
+
+
+// **************Switch_Init*********************
+// Initialize key inputs
+// Input: none
+// Output: none
+void Switch_Init(void){
+	volatile unsigned long delay;
+  SYSCTL_RCGC2_R |= 0x00000010;     // 1) activate clock for Port E
+  delay = SYSCTL_RCGC2_R;           // allow time for clock to start
+                                    // 2) no need to unlock GPIO Port E
+  GPIO_PORTE_AMSEL_R &= ~0x03;      // 3) disable analog on PE1-0
+  GPIO_PORTE_PCTL_R &= ~0x000000FF; // 4) PCTL GPIO on PE1-0
+  GPIO_PORTE_DIR_R &= ~0x03;        // 5) direction PE1-0 input
+  GPIO_PORTE_AFSEL_R &= ~0x03;      // 6) PE1-0 regular port function
+  GPIO_PORTE_DEN_R |= 0x03;         // 7) enable PE1-0 digital port
+  
+}
+// **************Switch_In*********************
+// Input from key inputs
+// Input: none 
+// Output: 0 to 2 depending on keys
+// 0x01 is key 0 pressed, 0x02 is key 1 pressed
+unsigned long Switch_In(void){
+	PE0Switch = (GPIO_PORTE_DATA_R & 0x01) != 0x00;
+	PE1Switch = (GPIO_PORTE_DATA_R & 0x02) != 0x00;
+	
+	if(PE0Switch){
+		return 1;
+	}
+	
+	if(PE1Switch){
+		return 2;
+	}
+ 
+  return 0;
+}
+
+
+void LED_Init(void){ 
+	volatile unsigned long delay;
+	
+  SYSCTL_RCGC2_R |= 0x02;           // 1) activate clock for Port A
+  delay = SYSCTL_RCGC2_R;           // allow time for clock to start
+                                    // 2) no need to unlock PA2
+  GPIO_PORTB_PCTL_R &= ~0x00FF0000; // 3) regular GPIO
+  GPIO_PORTB_AMSEL_R &= ~0x30;      // 4) disable analog function on PA2
+  GPIO_PORTB_DIR_R |= 0x30;         // 5) set direction to output
+  GPIO_PORTB_AFSEL_R &= ~0x30;      // 6) regular port function
+  GPIO_PORTB_DEN_R |= 0x30;         // 7) enable digital port
+}
+
+
